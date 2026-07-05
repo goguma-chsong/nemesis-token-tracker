@@ -757,36 +757,39 @@ export default function App() {
     }
   };
 
-  // Render value breakdown inside the bag for Adult and Breeder with conditional probabilities
-  const renderBreakdown = (typeId) => {
-    if (typeId === 'blank') return null;
-    const bagTokens = tokens.filter(t => t.type === typeId && t.status === 'BAG');
-    if (bagTokens.length === 0) return null;
+  // Render expected surprise attack probabilities based on public board state (excluding spawned tokens)
+  const renderExpectedProbabilities = (typeId) => {
+    const totalMax = typeId === 'adult' ? { 2: 4, 3: 5, 4: 3 } : { 3: 1, 4: 1 };
+    const values = typeId === 'adult' ? [2, 3, 4] : [3, 4];
     
-    if (typeId === 'adult' || typeId === 'breeder') {
-      const counts = {};
-      const values = typeId === 'adult' ? [2, 3, 4] : [3, 4];
-      values.forEach(v => { counts[v] = 0; });
-      
-      bagTokens.forEach(t => {
-        counts[t.value] = (counts[t.value] || 0) + 1;
-      });
-      
-      return (
-        <div className="token-breakdown-badges">
-          {values.map(v => {
-            const count = counts[v];
-            const pct = bagTokens.length > 0 ? ((count / bagTokens.length) * 100).toFixed(0) : 0;
-            return (
-              <span key={v} className={`breakdown-badge ${count === 0 ? 'empty' : ''}`}>
-                {v}: {count}{language === 'ko' ? '개' : 'x'} ({pct}%)
-              </span>
-            );
-          })}
-        </div>
-      );
+    // Count tokens currently on board (spawned)
+    const spawnedTokens = tokens.filter(t => t.type === typeId && t.status === 'BOARD');
+    const spawnedCounts = { 2: 0, 3: 0, 4: 0 };
+    spawnedTokens.forEach(t => {
+      spawnedCounts[t.value] = (spawnedCounts[t.value] || 0) + 1;
+    });
+    
+    // Calculate remaining (in bag + pool)
+    const remainingCounts = {};
+    let totalRemaining = 0;
+    values.forEach(v => {
+      remainingCounts[v] = Math.max(0, totalMax[v] - spawnedCounts[v]);
+      totalRemaining += remainingCounts[v];
+    });
+    
+    if (totalRemaining === 0) {
+      return <span className="stat-prob-value zero">N/A</span>;
     }
-    return null;
+    
+    return values.map(v => {
+      const count = remainingCounts[v];
+      const pct = ((count / totalRemaining) * 100).toFixed(0);
+      return (
+        <span key={v} className="stat-prob-value">
+          [{v}] {pct}%
+        </span>
+      );
+    });
   };
 
   return (
@@ -1088,8 +1091,6 @@ export default function App() {
                         <span className="token-threat-label">
                           {t('threat')}: {type.threat[language]}
                         </span>
-                        {/* Render value breakdown details for strategic depth */}
-                        {renderBreakdown(type.id)}
                       </div>
 
                       {/* Edit Quantity buttons */}
@@ -1126,6 +1127,27 @@ export default function App() {
               <div className="bag-summary-footer">
                 <span>{t('totalTokens')}: <span>{totalTokens}</span></span>
                 <span>{t('stability')}: <span>{totalTokens > 0 ? '99.8%' : 'OFFLINE'}</span></span>
+              </div>
+
+              {/* Global Expected Probability Stats Panel */}
+              <div className="global-expected-stats">
+                <div className="stats-title">
+                  {language === 'ko' 
+                    ? '🎯 인트루더 기습치 예상 확률 (보드판 스폰 제외)' 
+                    : '🎯 Expected Surprise Attack Probabilities (Excluding Board)'}
+                </div>
+                <div className="stats-row">
+                  <div className="stats-label">{language === 'ko' ? '성체 기습치 확률:' : 'Adult Surprise:'}</div>
+                  <div className="stats-values">
+                    {renderExpectedProbabilities('adult')}
+                  </div>
+                </div>
+                <div className="stats-row">
+                  <div className="stats-label">{language === 'ko' ? '완성체 기습치 확률:' : 'Breeder Surprise:'}</div>
+                  <div className="stats-values">
+                    {renderExpectedProbabilities('breeder')}
+                  </div>
+                </div>
               </div>
             </section>
           </main>
