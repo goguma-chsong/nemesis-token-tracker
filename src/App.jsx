@@ -78,6 +78,15 @@ const INTRUDER_TYPES = [
   }
 ];
 
+const TOKEN_LIMITS = {
+  blank: 1,
+  larva: 8,
+  creeper: 3,
+  adult: 12,
+  breeder: 2,
+  queen: 1
+};
+
 const TRANSLATIONS = {
   en: {
     title: "SYSTEM INTERFACE",
@@ -480,6 +489,14 @@ export default function App() {
 
   // Evolution Rules
   const handleEvolveLarva = () => {
+    if (bag.adult >= TOKEN_LIMITS.adult) {
+      alert(language === 'ko'
+        ? `경고: 성체 토큰 개수가 컴포넌트 제한(최대 ${TOKEN_LIMITS.adult}개)을 초과하므로 더 이상 추가할 수 없습니다. (피규어가 보드판에서 철수했을 가능성이 있습니다.)`
+        : `WARNING: Adult token count cannot exceed the component limit of ${TOKEN_LIMITS.adult}.`
+      );
+      setDrawnToken(null);
+      return;
+    }
     saveStateForUndo(bag, history);
     // Larva is already out, we just add 1 Adult
     setBag(prev => ({
@@ -505,6 +522,14 @@ export default function App() {
   };
 
   const handleEvolveCreeper = () => {
+    if (bag.breeder >= TOKEN_LIMITS.breeder) {
+      alert(language === 'ko'
+        ? `경고: 완성체 토큰 개수가 컴포넌트 제한(최대 ${TOKEN_LIMITS.breeder}개)을 초과하므로 더 이상 추가할 수 없습니다.`
+        : `WARNING: Breeder token count cannot exceed the component limit of ${TOKEN_LIMITS.breeder}.`
+      );
+      setDrawnToken(null);
+      return;
+    }
     saveStateForUndo(bag, history);
     // Creeper is already out, we just add 1 Breeder
     setBag(prev => ({
@@ -531,23 +556,31 @@ export default function App() {
 
   const handleBlankDevelopment = () => {
     saveStateForUndo(bag, history);
-    // Blank is returned to bag, and 1 Adult is added
+    const hasRoomForAdult = bag.adult < TOKEN_LIMITS.adult;
+    
     setBag(prev => ({
       ...prev,
       blank: prev.blank + 1,
-      adult: prev.adult + 1
+      adult: hasRoomForAdult ? prev.adult + 1 : prev.adult
     }));
 
     const timestamp = new Date().toLocaleTimeString();
     const isKorean = language === 'ko';
     
+    if (!hasRoomForAdult) {
+      alert(isKorean
+        ? `경고: 성체 토큰 개수가 컴포넌트 제한(최대 ${TOKEN_LIMITS.adult}개)에 도달하여 추가하지 않고 공허 토큰만 주머니로 회수합니다.`
+        : `WARNING: Adult token limit reached. Blank returned but no Adult added.`
+      );
+    }
+
     setHistory(prev => [
       ...prev,
       { 
         time: timestamp, 
         text: isKorean 
-          ? `성장단계: 공허 토큰 발생. 공허 회수, 성체 토큰 +1.` 
-          : `DEVELOPMENT: Blank token. Returned Blank, added 1 ADULT to bag.`, 
+          ? `성장단계: 공허 토큰 발생. 공허 회수${hasRoomForAdult ? ', 성체 토큰 +1' : ' (성체 토큰 제한으로 추가 실패)'}.` 
+          : `DEVELOPMENT: Blank token. Returned Blank${hasRoomForAdult ? ', added 1 ADULT to bag' : ' (Adult limit reached)'}.`, 
         type: 'evolve' 
       }
     ]);
@@ -582,6 +615,14 @@ export default function App() {
 
   // Adjust quantities manually (+ / -)
   const handleUpdateQuantity = (token, delta) => {
+    if (delta > 0 && bag[token] >= TOKEN_LIMITS[token]) {
+      const isKorean = language === 'ko';
+      alert(isKorean 
+        ? `경고: [${getTokenKoName(token)}] 토큰은 컴포넌트 제한(최대 ${TOKEN_LIMITS[token]}개)을 초과해 주머니에 추가할 수 없습니다.` 
+        : `WARNING: [${token.toUpperCase()}] token count cannot exceed the physical limit of ${TOKEN_LIMITS[token]} in the bag.`
+      );
+      return;
+    }
     if (bag[token] + delta < 0) return;
     saveStateForUndo(bag, history);
     setBag(prev => ({
@@ -994,6 +1035,23 @@ export default function App() {
                   <li>{t('rulesEncounter1')}</li>
                   <li>{t('rulesEncounter2')}</li>
                   <li>{t('rulesEncounter3')}</li>
+                </ul>
+              </section>
+
+              <section>
+                <h4>{language === 'ko' ? '4. 컴포넌트 공급처 제한 (Component Limits)' : '4. Component Supply Limits'}</h4>
+                <p>
+                  {language === 'ko' 
+                    ? '네메시스는 박스에 동봉된 물리 토큰 구성품 개수로 총량이 엄격히 제한됩니다. 규칙상 토큰을 주머니에 추가해야 하지만 공급처에 남은 토큰이 없다면 추가하지 않고 단계를 스킵합니다.' 
+                    : 'Nemesis tokens are strictly limited by physical component limits. If a rule instructs you to add a token but none are available in the supply, that step is skipped.'}
+                </p>
+                <ul>
+                  <li>{language === 'ko' ? '공허 토큰: 최대 1개' : 'Blank token: Max 1'}</li>
+                  <li>{language === 'ko' ? '애벌레 토큰: 최대 8개' : 'Larva token: Max 8'}</li>
+                  <li>{language === 'ko' ? '아성체 토큰: 최대 3개' : 'Creeper token: Max 3'}</li>
+                  <li>{language === 'ko' ? '성체 토큰: 최대 12개' : 'Adult token: Max 12'}</li>
+                  <li>{language === 'ko' ? '완성체 토큰: 최대 2개' : 'Breeder token: Max 2'}</li>
+                  <li>{language === 'ko' ? '여왕 토큰: 최대 1개' : 'Queen token: Max 1'}</li>
                 </ul>
               </section>
             </div>
