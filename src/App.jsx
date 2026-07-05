@@ -757,7 +757,7 @@ export default function App() {
     }
   };
 
-  // Render value breakdown inside the bag for Adult and Breeder
+  // Render value breakdown inside the bag for Adult and Breeder with conditional probabilities
   const renderBreakdown = (typeId) => {
     if (typeId === 'blank') return null;
     const bagTokens = tokens.filter(t => t.type === typeId && t.status === 'BAG');
@@ -774,11 +774,15 @@ export default function App() {
       
       return (
         <div className="token-breakdown-badges">
-          {values.map(v => (
-            <span key={v} className={`breakdown-badge ${counts[v] === 0 ? 'empty' : ''}`}>
-              {v}: {counts[v]}
-            </span>
-          ))}
+          {values.map(v => {
+            const count = counts[v];
+            const pct = bagTokens.length > 0 ? ((count / bagTokens.length) * 100).toFixed(0) : 0;
+            return (
+              <span key={v} className={`breakdown-badge ${count === 0 ? 'empty' : ''}`}>
+                {v}: {count}{language === 'ko' ? '개' : 'x'} ({pct}%)
+              </span>
+            );
+          })}
         </div>
       );
     }
@@ -986,35 +990,51 @@ export default function App() {
 
                     {/* Interactive Tactical buttons for drawn tokens */}
                     <div className="drawn-decision-actions">
-                      {/* Special development buttons */}
-                      {drawMode === 'DEVELOPMENT' && drawnToken.type === 'blank' && (
-                        <button className="btn-decision primary" onClick={handleBlankDevelopment}>
-                          ⚙️ {t('applyEvo')} (공허 ➕ 성체)
-                        </button>
+                      {drawMode === 'DEVELOPMENT' ? (
+                        /* Development Mode Options (Deterministic evolution or special choices) */
+                        <>
+                          {drawnToken.type === 'blank' && (
+                            <button className="btn-decision primary" onClick={handleBlankDevelopment}>
+                              ⚙️ {t('applyEvo')} (공허 ➕ 성체)
+                            </button>
+                          )}
+                          {drawnToken.type === 'larva' && (
+                            <button className="btn-decision primary" onClick={handleEvolveLarva}>
+                              ⚙️ {t('applyEvo')} (애벌레 ➡️ 성체)
+                            </button>
+                          )}
+                          {drawnToken.type === 'creeper' && (
+                            <button className="btn-decision primary" onClick={handleEvolveCreeper}>
+                              ⚙️ {t('applyEvo')} (아성체 ➡️ 완성체)
+                            </button>
+                          )}
+                          {['adult', 'breeder'].includes(drawnToken.type) && (
+                            <button className="btn-decision primary" onClick={handleReturnToBag}>
+                              🔄 {t('returnToken')} ({language === 'ko' ? '성체/완성체 회수 & 소음 판정' : 'Return & Noise Roll'})
+                            </button>
+                          )}
+                          {drawnToken.type === 'queen' && (
+                            <>
+                              <button className="btn-decision primary" onClick={handleQueenEggDevelopment}>
+                                🥚 {language === 'ko' ? '둥지 안전: 알 추가 & 여왕 회수' : 'NEST SAFE: Add Egg & Return Queen'}
+                              </button>
+                              <button className="btn-decision warning-action" onClick={handleKeepOut}>
+                                👾 {language === 'ko' ? '둥지 조우: 여왕 보드판 소환' : 'NEST COMBAT: Spawn Queen'}
+                              </button>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        /* Standard Mode Options (Encounter) - Always let user choose to Return or Spawn */
+                        <>
+                          <button className="btn-decision warning-action" onClick={handleReturnToBag}>
+                            🔄 {t('returnToken')}
+                          </button>
+                          <button className="btn-decision" onClick={handleKeepOut}>
+                            👾 {t('keepOut')}
+                          </button>
+                        </>
                       )}
-                      {drawMode === 'DEVELOPMENT' && drawnToken.type === 'larva' && (
-                        <button className="btn-decision primary" onClick={handleEvolveLarva}>
-                          ⚙️ {t('applyEvo')} (애벌레 ➡️ 성체)
-                        </button>
-                      )}
-                      {drawMode === 'DEVELOPMENT' && drawnToken.type === 'creeper' && (
-                        <button className="btn-decision primary" onClick={handleEvolveCreeper}>
-                          ⚙️ {t('applyEvo')} (아성체 ➡️ 완성체)
-                        </button>
-                      )}
-                      {drawMode === 'DEVELOPMENT' && drawnToken.type === 'queen' && (
-                        <button className="btn-decision primary" onClick={handleQueenEggDevelopment}>
-                          🥚 {language === 'ko' ? '둥지 안전: 알 추가 & 여왕 회수' : 'NEST SAFE: Add Egg & Return Queen'}
-                        </button>
-                      )}
-
-                      {/* Standard Options */}
-                      <button className="btn-decision warning-action" onClick={handleReturnToBag}>
-                        🔄 {t('returnToken')}
-                      </button>
-                      <button className="btn-decision" onClick={handleKeepOut}>
-                        👾 {t('keepOut')}
-                      </button>
                     </div>
                   </div>
                 )}
