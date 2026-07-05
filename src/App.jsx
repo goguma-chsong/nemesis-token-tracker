@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { playClick, playDraw, playReveal, playAlarm, playPneumatic, setMuted } from './audio';
 
-// Detailed descriptions and properties for each intruder type with bilingual support (Korean updated as requested)
+// Detailed descriptions and properties for each intruder type with bilingual support
 const INTRUDER_TYPES = [
   {
     id: 'blank',
@@ -10,7 +10,7 @@ const INTRUDER_TYPES = [
     threat: { en: 'SAFE (FOR NOW)', ko: '안전 (현재는...)' },
     description: {
       en: 'No immediate threat. Evolve during development phases.',
-      ko: '즉각적인 위협은 없습니다. 주머니 개발 단계에서 성체 추가의 매개체가 됩니다.'
+      ko: '즉각적인 위협은 없습니다. 주머니 성장 단계에서 성체 추가의 매개체가 됩니다.'
     },
     color: 'var(--color-gray)',
     glow: 'var(--color-gray-glow)',
@@ -19,10 +19,10 @@ const INTRUDER_TYPES = [
   {
     id: 'larva',
     name: { en: 'Larva', ko: '애벌레 (Larva)' },
-    threat: { en: 'LOW', ko: '낮음' },
+    threat: { en: 'LOW', ko: '낮음 (1)' },
     description: {
       en: 'Small parasite. Infests characters or evolves into an Adult.',
-      ko: '기생충. 캐릭터 몸속에 침투하거나 주머니 개발 시 성체로 진화합니다.'
+      ko: '기생충. 캐릭터 몸속에 침투하거나 주머니 성장 시 성체로 진화합니다. (기습공격 수치: 1)'
     },
     color: 'var(--color-purple)',
     glow: 'var(--color-purple-glow)',
@@ -31,10 +31,10 @@ const INTRUDER_TYPES = [
   {
     id: 'creeper',
     name: { en: 'Creeper', ko: '아성체 (Creeper)' },
-    threat: { en: 'MEDIUM', ko: '보통' },
+    threat: { en: 'MEDIUM', ko: '보통 (1)' },
     description: {
       en: 'Highly agile juvenile. Evolve to Breeder in bag development.',
-      ko: '날렵한 유년기 괴수. 주머니 개발 시 완성체로 진화합니다.'
+      ko: '날렵한 유년기 괴수. 주머니 성장 시 완성체로 진화합니다. (기습공격 수치: 1)'
     },
     color: 'var(--color-amber)',
     glow: 'var(--color-amber-glow)',
@@ -43,10 +43,10 @@ const INTRUDER_TYPES = [
   {
     id: 'adult',
     name: { en: 'Adult', ko: '성체 (Adult)' },
-    threat: { en: 'HIGH', ko: '높음' },
+    threat: { en: 'HIGH', ko: '높음 (2-4)' },
     description: {
       en: 'The standard alien horror. Fast, aggressive, and numerous.',
-      ko: '가장 흔하고 포악한 인트루더. 속도가 빠르고 개체 수가 많습니다.'
+      ko: '가장 흔하고 포악한 인트루더. 기습치 분배가 다양합니다. (기습공격 수치: 2, 3, 4)'
     },
     color: 'var(--color-red)',
     glow: 'var(--color-red-glow)',
@@ -55,10 +55,10 @@ const INTRUDER_TYPES = [
   {
     id: 'breeder',
     name: { en: 'Breeder', ko: '완성체 (Breeder)' },
-    threat: { en: 'EXTREME', ko: '매우 높음' },
+    threat: { en: 'EXTREME', ko: '매우 높음 (3-4)' },
     description: {
       en: 'Massive armored bulk. Tough to wound, lethal close combat.',
-      ko: '거대하고 육중한 인트루더. 공격 강도가 강력하며 쓰러뜨리기 어렵습니다.'
+      ko: '거대하고 육중한 인트루더. 기습 공격력이 매우 높습니다. (기습공격 수치: 3, 4)'
     },
     color: 'var(--color-red)',
     glow: 'var(--color-red-glow)',
@@ -67,15 +67,39 @@ const INTRUDER_TYPES = [
   {
     id: 'queen',
     name: { en: 'Queen', ko: '여왕 (Queen)' },
-    threat: { en: 'LETHAL', ko: '치명적' },
+    threat: { en: 'LETHAL', ko: '치명적 (4)' },
     description: {
       en: 'Intruder matriarch. Nest encounters spawn her immediately.',
-      ko: '인류의 천적 인트루더 여왕. 플레이어가 둥지에 있는 경우 즉시 마주치게 됩니다.'
+      ko: '인류의 천적 인트루더 여왕. 기습공격이 매우 아픕니다. (기습공격 수치: 4)'
     },
     color: 'var(--color-green)',
     glow: 'var(--color-green-glow)',
     colorClass: 'green'
   }
+];
+
+// Physical tokens config (official quantity and values on the back)
+const INITIAL_PHYSICAL_TOKENS = [
+  // 공허 (1개, 수치 없음)
+  { id: 'blank_1', type: 'blank', value: null, status: 'POOL' },
+  
+  // 애벌레 (8개, 기습치: 1)
+  ...Array(8).fill().map((_, i) => ({ id: `larva_${i+1}`, type: 'larva', value: 1, status: 'POOL' })),
+  
+  // 아성체 (3개, 기습치: 1)
+  ...Array(3).fill().map((_, i) => ({ id: `creeper_${i+1}`, type: 'creeper', value: 1, status: 'POOL' })),
+  
+  // 성체 (12개: 2짜리 4개, 3짜리 5개, 4짜리 3개)
+  ...Array(4).fill().map((_, i) => ({ id: `adult_2_${i+1}`, type: 'adult', value: 2, status: 'POOL' })),
+  ...Array(5).fill().map((_, i) => ({ id: `adult_3_${i+1}`, type: 'adult', value: 3, status: 'POOL' })),
+  ...Array(3).fill().map((_, i) => ({ id: `adult_4_${i+1}`, type: 'adult', value: 4, status: 'POOL' })),
+  
+  // 완성체 (2개: 3짜리 1개, 4짜리 1개)
+  { id: 'breeder_3_1', type: 'breeder', value: 3, status: 'POOL' },
+  { id: 'breeder_4_1', type: 'breeder', value: 4, status: 'POOL' },
+  
+  // 여왕 (1개, 기습치: 4)
+  { id: 'queen_4_1', type: 'queen', value: 4, status: 'POOL' }
 ];
 
 const TOKEN_LIMITS = {
@@ -162,7 +186,7 @@ const TRANSLATIONS = {
     analyzing: "원격 분석 중...",
     contained: "격리됨",
     encounterBadge: "인트루더 조우 드로우",
-    devBadge: "인트루더 주머니 성장 단계 드로우",
+    devBadge: "주머니 성장 단계 드로우",
     threat: "위협 상태",
     telemetry: "원격 격리실 분석",
     evoRules: "주머니 진화 규칙",
@@ -188,7 +212,7 @@ const TRANSLATIONS = {
     rulesSection2Text: "매 라운드 종료 시(이벤트 단계), 주머니에서 토큰을 1개 뽑아 나온 유형에 따라 아래 처리를 실행합니다.",
     rulesSection3: "3. 인트루더 조우 규칙 (Encounter)",
     rulesSection3Text: "소음 주사위 등으로 인트루더 조우가 활성화되어 토큰을 뽑는 경우, 위협치와 손패 장수를 비교합니다.",
-    rulesEncounter1: "뽑힌 인트루더의 고유 수치(전투력)가 해당 플레이어의 현재 손패 장수보다 크면, 인트루더가 즉시 습격(Surprise Attack)을 가합니다.",
+    rulesEncounter1: "뽑힌 인트루더의 고유 수치(전투력/기습 수치)가 해당 플레이어의 현재 손패 장수보다 크면, 인트루더가 즉시 습격(Surprise Attack)을 가합니다.",
     rulesEncounter2: "인트루더가 보드판에 출현하는 경우 해당 토큰은 주머니에 넣지 않고 주머니 밖(제거)에 둡니다.",
     rulesEncounter3: "공허(Blank) 토큰을 뽑은 경우 해당 방과 연결된 모든 통로에 소음 마커를 1개씩 추가하고 공허 토큰은 주머니에 되돌려놓습니다."
   }
@@ -254,17 +278,13 @@ export default function App() {
   const [gameState, setGameState] = useState('SETUP'); // SETUP or PLAYING
   const [playerCount, setPlayerCount] = useState(4);
   const [language, setLanguage] = useState('ko'); // 'en' or 'ko' default
-  const [bag, setBag] = useState({
-    blank: 1,
-    larva: 4,
-    creeper: 1,
-    adult: 7,
-    breeder: 0,
-    queen: 1
-  });
+  
+  // Track all physical tokens' status
+  const [tokens, setTokens] = useState(INITIAL_PHYSICAL_TOKENS);
+  const [drawnToken, setDrawnToken] = useState(null); // stores drawn token object
+  
   const [history, setHistory] = useState([]);
   const [undoStack, setUndoStack] = useState([]);
-  const [drawnToken, setDrawnToken] = useState(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
@@ -277,7 +297,7 @@ export default function App() {
   const t = (key) => TRANSLATIONS[language]?.[key] || key;
 
   // Helper to fetch translated name by token ID
-  const getTokenKoName = (id) => INTRUDER_TYPES.find(t => t.id === id)?.name.ko || id;
+  const getTokenKoName = (typeId) => INTRUDER_TYPES.find(t => t.id === typeId)?.name.ko || typeId;
 
   // Update Ship time indicator every second
   useEffect(() => {
@@ -298,11 +318,17 @@ export default function App() {
     }
   }, [history]);
 
-  const totalTokens = Object.values(bag).reduce((sum, val) => sum + val, 0);
+  // Derived properties from tokens state
+  const totalTokens = tokens.filter(t => t.status === 'BAG').length;
+
+  const getBagCount = (typeId) => {
+    return tokens.filter(t => t.type === typeId && t.status === 'BAG').length;
+  };
 
   const getProbability = (id) => {
     if (totalTokens === 0) return 0;
-    return ((bag[id] / totalTokens) * 100).toFixed(1);
+    const count = getBagCount(id);
+    return ((count / totalTokens) * 100).toFixed(1);
   };
 
   const toggleLanguage = () => {
@@ -318,11 +344,11 @@ export default function App() {
   };
 
   // Push state to undo stack before editing
-  const saveStateForUndo = (currentBag, currentHistory) => {
+  const saveStateForUndo = (currentTokens, currentHistory) => {
     setUndoStack(prev => [
       ...prev,
       {
-        bag: { ...currentBag },
+        tokens: currentTokens.map(t => ({ ...t })),
         history: [...currentHistory]
       }
     ]);
@@ -331,7 +357,7 @@ export default function App() {
   const handleUndo = () => {
     if (undoStack.length === 0) return;
     const previous = undoStack[undoStack.length - 1];
-    setBag(previous.bag);
+    setTokens(previous.tokens);
     setHistory(previous.history);
     setUndoStack(prev => prev.slice(0, prev.length - 1));
     setDrawnToken(null);
@@ -340,15 +366,33 @@ export default function App() {
 
   // Set standard startup bag
   const handleInitializeGame = () => {
-    const startBag = {
-      blank: 1,
-      larva: 4,
-      creeper: 1,
-      adult: 3 + playerCount,
-      breeder: 0,
-      queen: 1
-    };
-    setBag(startBag);
+    let nextTokens = INITIAL_PHYSICAL_TOKENS.map(t => ({ ...t, status: 'POOL' }));
+    
+    // 1. Move 1 Blank to BAG
+    const blank = nextTokens.find(t => t.type === 'blank');
+    if (blank) blank.status = 'BAG';
+    
+    // 2. Move 4 Larvae to BAG (all value 1)
+    const larvae = nextTokens.filter(t => t.type === 'larva');
+    larvae.slice(0, 4).forEach(t => t.status = 'BAG');
+    
+    // 3. Move 1 Creeper to BAG (value 1)
+    const creeper = nextTokens.find(t => t.type === 'creeper');
+    if (creeper) creeper.status = 'BAG';
+    
+    // 4. Move 1 Queen to BAG (value 4)
+    const queen = nextTokens.find(t => t.type === 'queen');
+    if (queen) queen.status = 'BAG';
+    
+    // 5. Move 3 + playerCount Adults to BAG (randomly selected from 12)
+    const adults = nextTokens.filter(t => t.type === 'adult');
+    const shuffledAdults = [...adults].sort(() => Math.random() - 0.5);
+    shuffledAdults.slice(0, 3 + playerCount).forEach(t => {
+      const target = nextTokens.find(original => original.id === t.id);
+      if (target) target.status = 'BAG';
+    });
+    
+    setTokens(nextTokens);
     setUndoStack([]);
     
     const timestamp = new Date().toLocaleTimeString();
@@ -358,8 +402,8 @@ export default function App() {
       {
         time: timestamp,
         text: isKorean 
-          ? `로그 활성화: ${playerCount}인 기준 주머니 표준 밀도 설정됨.` 
-          : `LOG INITIALIZED: Standard Bag configured for ${playerCount} Players.`,
+          ? `로그 활성화: ${playerCount}인 기준 주머니 표준 밀도 설정됨 (기습공격 수치 포함).` 
+          : `LOG INITIALIZED: Standard Bag configured for ${playerCount} Players with combat values.`,
         type: 'setup'
       },
       {
@@ -387,31 +431,25 @@ export default function App() {
     playDraw();
 
     // Store state for undo
-    saveStateForUndo(bag, history);
+    saveStateForUndo(tokens, history);
 
     setTimeout(() => {
-      // Build a flat bag list based on current counts
-      const flatBag = [];
-      Object.entries(bag).forEach(([token, count]) => {
-        for (let i = 0; i < count; i++) {
-          flatBag.push(token);
-        }
-      });
+      // Filter tokens currently in the bag
+      const bagTokens = tokens.filter(t => t.status === 'BAG');
+      
+      const randomIndex = Math.floor(Math.random() * bagTokens.length);
+      const selectedToken = bagTokens[randomIndex];
 
-      const randomIndex = Math.floor(Math.random() * flatBag.length);
-      const selectedToken = flatBag[randomIndex];
-
-      // Remove the token from the bag
-      setBag(prev => ({
-        ...prev,
-        [selectedToken]: Math.max(0, prev[selectedToken] - 1)
-      }));
+      // Remove the token from the bag (mark as DRAWN)
+      setTokens(prev => prev.map(t => 
+        t.id === selectedToken.id ? { ...t, status: 'DRAWN' } : t
+      ));
 
       setDrawnToken(selectedToken);
       setIsDrawing(false);
 
       // Play dangerous trigger sounds
-      const isDangerous = ['adult', 'breeder', 'queen'].includes(selectedToken);
+      const isDangerous = ['adult', 'breeder', 'queen'].includes(selectedToken.type);
       playReveal(isDangerous);
       if (isDangerous) {
         playAlarm();
@@ -424,10 +462,12 @@ export default function App() {
         ? (isKorean ? '인트루더 주머니 성장 드로우' : 'SYSTEM DEV DRAW') 
         : (isKorean ? '조우 인트루더 드로우' : 'HUD INTRUDER DRAW');
       
-      const tokenDisplayName = isKorean ? getTokenKoName(selectedToken) : selectedToken.toUpperCase();
+      const tokenDisplayName = isKorean ? getTokenKoName(selectedToken.type) : selectedToken.type.toUpperCase();
+      const valueSuffix = selectedToken.value ? ` [기습치: ${selectedToken.value}]` : '';
+      
       const logText = isKorean 
-        ? `${actionLabel}: [${tokenDisplayName}] 토큰 드로우 완료.` 
-        : `${actionLabel}: Drawn ${selectedToken.toUpperCase()} token.`;
+        ? `${actionLabel}: [${tokenDisplayName}${valueSuffix}] 토큰 드로우 완료.` 
+        : `${actionLabel}: Drawn ${selectedToken.type.toUpperCase()}${valueSuffix} token.`;
 
       setHistory(prev => [
         ...prev,
@@ -440,23 +480,25 @@ export default function App() {
   const handleReturnToBag = () => {
     if (!drawnToken) return;
 
-    saveStateForUndo(bag, history);
-    setBag(prev => ({
-      ...prev,
-      [drawnToken]: prev[drawnToken] + 1
-    }));
+    saveStateForUndo(tokens, history);
+    
+    // Set status back to BAG
+    setTokens(prev => prev.map(t => 
+      t.id === drawnToken.id ? { ...t, status: 'BAG' } : t
+    ));
 
     const timestamp = new Date().toLocaleTimeString();
     const isKorean = language === 'ko';
-    const tokenDisplayName = isKorean ? getTokenKoName(drawnToken) : drawnToken.toUpperCase();
+    const tokenDisplayName = isKorean ? getTokenKoName(drawnToken.type) : drawnToken.type.toUpperCase();
+    const valueSuffix = drawnToken.value ? ` (${drawnToken.value})` : '';
     
     setHistory(prev => [
       ...prev,
       { 
         time: timestamp, 
         text: isKorean 
-          ? `결과: [${tokenDisplayName}] 토큰을 다시 주머니로 회수.` 
-          : `RESOLUTION: Returned ${drawnToken.toUpperCase()} token back to bag.`, 
+          ? `결과: [${tokenDisplayName}${valueSuffix}] 토큰을 다시 주머니로 회수.` 
+          : `RESOLUTION: Returned ${drawnToken.type.toUpperCase()}${valueSuffix} token back to bag.`, 
         type: 'edit' 
       }
     ]);
@@ -467,19 +509,25 @@ export default function App() {
   const handleKeepOut = () => {
     if (!drawnToken) return;
 
-    saveStateForUndo(bag, history);
-    // Token is already deducted, just clear drawn state
+    saveStateForUndo(tokens, history);
+    
+    // Set status to BOARD (out of the bag)
+    setTokens(prev => prev.map(t => 
+      t.id === drawnToken.id ? { ...t, status: 'BOARD' } : t
+    ));
+
     const timestamp = new Date().toLocaleTimeString();
     const isKorean = language === 'ko';
-    const tokenDisplayName = isKorean ? getTokenKoName(drawnToken) : drawnToken.toUpperCase();
+    const tokenDisplayName = isKorean ? getTokenKoName(drawnToken.type) : drawnToken.type.toUpperCase();
+    const valueSuffix = drawnToken.value ? ` (${drawnToken.value})` : '';
     
     setHistory(prev => [
       ...prev,
       { 
         time: timestamp, 
         text: isKorean 
-          ? `결과: [${tokenDisplayName}] 보드판에 피규어로 출현. 주머니에서 제외.` 
-          : `RESOLUTION: ${drawnToken.toUpperCase()} spawned on board. Removed from bag.`, 
+          ? `결과: [${tokenDisplayName}${valueSuffix}] 보드판에 피규어로 출현. 주머니에서 제외.` 
+          : `RESOLUTION: ${drawnToken.type.toUpperCase()}${valueSuffix} spawned on board. Removed from bag.`, 
         type: 'edit' 
       }
     ]);
@@ -489,19 +537,25 @@ export default function App() {
 
   // Evolution Rules
   const handleEvolveLarva = () => {
-    if (bag.adult >= TOKEN_LIMITS.adult) {
+    const poolAdults = tokens.filter(t => t.type === 'adult' && t.status === 'POOL');
+    if (poolAdults.length === 0) {
       alert(language === 'ko'
-        ? `경고: 성체 토큰 개수가 컴포넌트 제한(최대 ${TOKEN_LIMITS.adult}개)을 초과하므로 더 이상 추가할 수 없습니다. (피규어가 보드판에서 철수했을 가능성이 있습니다.)`
-        : `WARNING: Adult token count cannot exceed the component limit of ${TOKEN_LIMITS.adult}.`
+        ? `경고: 성체 토큰이 모두 소진되어 더 이상 추가할 수 없습니다. (피규어가 보드판에서 철수했을 가능성이 있습니다.)`
+        : `WARNING: Adult token count cannot exceed the component limit.`
       );
       setDrawnToken(null);
       return;
     }
-    saveStateForUndo(bag, history);
-    // Larva is already out, we just add 1 Adult
-    setBag(prev => ({
-      ...prev,
-      adult: prev.adult + 1
+
+    saveStateForUndo(tokens, history);
+    
+    // Pick random Adult from pool
+    const randomAdult = poolAdults[Math.floor(Math.random() * poolAdults.length)];
+
+    setTokens(prev => prev.map(t => {
+      if (t.id === drawnToken.id) return { ...t, status: 'POOL' }; // Larva goes to pool
+      if (t.id === randomAdult.id) return { ...t, status: 'BAG' };  // Adult goes to bag
+      return t;
     }));
 
     const timestamp = new Date().toLocaleTimeString();
@@ -512,8 +566,8 @@ export default function App() {
       { 
         time: timestamp, 
         text: isKorean 
-          ? `진화: 애벌레가 성체로 성장. 애벌레 제거, 성체 토큰 +1.` 
-          : `EVOLVE: Larva token evolved. Removed Larva, added 1 ADULT to bag.`, 
+          ? `진화: 애벌레가 성체로 성장. 애벌레 제거, 성체 토큰(기습치: ${randomAdult.value}) +1.` 
+          : `EVOLVE: Larva token evolved. Removed Larva, added 1 ADULT (${randomAdult.value}) to bag.`, 
         type: 'evolve' 
       }
     ]);
@@ -522,19 +576,25 @@ export default function App() {
   };
 
   const handleEvolveCreeper = () => {
-    if (bag.breeder >= TOKEN_LIMITS.breeder) {
+    const poolBreeders = tokens.filter(t => t.type === 'breeder' && t.status === 'POOL');
+    if (poolBreeders.length === 0) {
       alert(language === 'ko'
-        ? `경고: 완성체 토큰 개수가 컴포넌트 제한(최대 ${TOKEN_LIMITS.breeder}개)을 초과하므로 더 이상 추가할 수 없습니다.`
-        : `WARNING: Breeder token count cannot exceed the component limit of ${TOKEN_LIMITS.breeder}.`
+        ? `경고: 완성체 토큰이 모두 소진되어 더 이상 추가할 수 없습니다.`
+        : `WARNING: Breeder token count cannot exceed the component limit.`
       );
       setDrawnToken(null);
       return;
     }
-    saveStateForUndo(bag, history);
-    // Creeper is already out, we just add 1 Breeder
-    setBag(prev => ({
-      ...prev,
-      breeder: prev.breeder + 1
+
+    saveStateForUndo(tokens, history);
+    
+    // Pick random Breeder from pool
+    const randomBreeder = poolBreeders[Math.floor(Math.random() * poolBreeders.length)];
+
+    setTokens(prev => prev.map(t => {
+      if (t.id === drawnToken.id) return { ...t, status: 'POOL' }; // Creeper to pool
+      if (t.id === randomBreeder.id) return { ...t, status: 'BAG' }; // Breeder to bag
+      return t;
     }));
 
     const timestamp = new Date().toLocaleTimeString();
@@ -545,8 +605,8 @@ export default function App() {
       { 
         time: timestamp, 
         text: isKorean 
-          ? `진화: 아성체가 완성체로 성장. 아성체 제거, 완성체 토큰 +1.` 
-          : `EVOLVE: Creeper token evolved. Removed Creeper, added 1 BREEDER to bag.`, 
+          ? `진화: 아성체가 완성체로 성장. 아성체 제거, 완성체 토큰(기습치: ${randomBreeder.value}) +1.` 
+          : `EVOLVE: Creeper token evolved. Removed Creeper, added 1 BREEDER (${randomBreeder.value}) to bag.`, 
         type: 'evolve' 
       }
     ]);
@@ -555,13 +615,20 @@ export default function App() {
   };
 
   const handleBlankDevelopment = () => {
-    saveStateForUndo(bag, history);
-    const hasRoomForAdult = bag.adult < TOKEN_LIMITS.adult;
+    const poolAdults = tokens.filter(t => t.type === 'adult' && t.status === 'POOL');
+    const hasRoomForAdult = poolAdults.length > 0;
     
-    setBag(prev => ({
-      ...prev,
-      blank: prev.blank + 1,
-      adult: hasRoomForAdult ? prev.adult + 1 : prev.adult
+    saveStateForUndo(tokens, history);
+    
+    let randomAdult = null;
+    if (hasRoomForAdult) {
+      randomAdult = poolAdults[Math.floor(Math.random() * poolAdults.length)];
+    }
+
+    setTokens(prev => prev.map(t => {
+      if (t.id === drawnToken.id) return { ...t, status: 'BAG' }; // Blank returned
+      if (randomAdult && t.id === randomAdult.id) return { ...t, status: 'BAG' }; // Adult added
+      return t;
     }));
 
     const timestamp = new Date().toLocaleTimeString();
@@ -569,7 +636,7 @@ export default function App() {
     
     if (!hasRoomForAdult) {
       alert(isKorean
-        ? `경고: 성체 토큰 개수가 컴포넌트 제한(최대 ${TOKEN_LIMITS.adult}개)에 도달하여 추가하지 않고 공허 토큰만 주머니로 회수합니다.`
+        ? `경고: 성체 토큰 개수가 컴포넌트 제한(최대 12개)에 도달하여 추가하지 않고 공허 토큰만 주머니로 회수합니다.`
         : `WARNING: Adult token limit reached. Blank returned but no Adult added.`
       );
     }
@@ -579,8 +646,8 @@ export default function App() {
       { 
         time: timestamp, 
         text: isKorean 
-          ? `성장단계: 공허 토큰 발생. 공허 회수${hasRoomForAdult ? ', 성체 토큰 +1' : ' (성체 토큰 제한으로 추가 실패)'}.` 
-          : `DEVELOPMENT: Blank token. Returned Blank${hasRoomForAdult ? ', added 1 ADULT to bag' : ' (Adult limit reached)'}.`, 
+          ? `성장단계: 공허 토큰 발생. 공허 회수${hasRoomForAdult ? `, 성체 토큰(기습치: ${randomAdult.value}) +1` : ' (성체 토큰 제한으로 추가 실패)'}.` 
+          : `DEVELOPMENT: Blank token. Returned Blank${hasRoomForAdult ? `, added 1 ADULT (${randomAdult.value}) to bag` : ' (Adult limit reached)'}.`, 
         type: 'evolve' 
       }
     ]);
@@ -589,12 +656,12 @@ export default function App() {
   };
 
   const handleQueenEggDevelopment = () => {
-    saveStateForUndo(bag, history);
-    // Queen is returned to bag, Egg is placed on board
-    setBag(prev => ({
-      ...prev,
-      queen: prev.queen + 1
-    }));
+    saveStateForUndo(tokens, history);
+    
+    // Queen is returned to bag
+    setTokens(prev => prev.map(t => 
+      t.id === drawnToken.id ? { ...t, status: 'BAG' } : t
+    ));
 
     const timestamp = new Date().toLocaleTimeString();
     const isKorean = language === 'ko';
@@ -615,36 +682,67 @@ export default function App() {
 
   // Adjust quantities manually (+ / -)
   const handleUpdateQuantity = (token, delta) => {
-    if (delta > 0 && bag[token] >= TOKEN_LIMITS[token]) {
-      const isKorean = language === 'ko';
-      alert(isKorean 
-        ? `경고: [${getTokenKoName(token)}] 토큰은 컴포넌트 제한(최대 ${TOKEN_LIMITS[token]}개)을 초과해 주머니에 추가할 수 없습니다.` 
-        : `WARNING: [${token.toUpperCase()}] token count cannot exceed the physical limit of ${TOKEN_LIMITS[token]} in the bag.`
-      );
-      return;
-    }
-    if (bag[token] + delta < 0) return;
-    saveStateForUndo(bag, history);
-    setBag(prev => ({
-      ...prev,
-      [token]: prev[token] + delta
-    }));
-
-    const timestamp = new Date().toLocaleTimeString();
-    const direction = delta > 0 ? '+' : '-';
     const isKorean = language === 'ko';
-    const tokenDisplayName = isKorean ? getTokenKoName(token) : token.toUpperCase();
     
-    setHistory(prev => [
-      ...prev,
-      {
-        time: timestamp,
-        text: isKorean 
-          ? `수동 조정: [${tokenDisplayName}] ${direction}${Math.abs(delta)} (최종 잔량: ${bag[token] + delta}개)`
-          : `MANUAL OVERRIDE: ${direction}${Math.abs(delta)} ${token.toUpperCase()} (Total: ${bag[token] + delta})`,
-        type: 'edit'
+    if (delta > 0) {
+      const poolTokens = tokens.filter(t => t.type === token && t.status === 'POOL');
+      if (poolTokens.length === 0) {
+        alert(isKorean 
+          ? `경고: [${getTokenKoName(token)}] 토큰은 컴포넌트 제한(최대 ${TOKEN_LIMITS[token]}개)을 초과해 주머니에 추가할 수 없습니다.` 
+          : `WARNING: [${token.toUpperCase()}] token count cannot exceed the physical limit of ${TOKEN_LIMITS[token]} in the bag.`
+        );
+        return;
       }
-    ]);
+      
+      saveStateForUndo(tokens, history);
+      
+      // Randomly pick a token from pool to maintain value randomness
+      const toAdd = poolTokens[Math.floor(Math.random() * poolTokens.length)];
+      setTokens(prev => prev.map(t => 
+        t.id === toAdd.id ? { ...t, status: 'BAG' } : t
+      ));
+      
+      const timestamp = new Date().toLocaleTimeString();
+      const valueSuffix = toAdd.value ? ` (기습치: ${toAdd.value})` : '';
+      const newCount = getBagCount(token) + 1;
+      
+      setHistory(prev => [
+        ...prev,
+        {
+          time: timestamp,
+          text: isKorean 
+            ? `수동 조정: [${getTokenKoName(token)}${valueSuffix}] +1 추가 (최종 잔량: ${newCount}개)`
+            : `MANUAL OVERRIDE: +1 ${token.toUpperCase()}${valueSuffix} (Total: ${newCount})`,
+          type: 'edit'
+        }
+      ]);
+    } else {
+      const bagTokens = tokens.filter(t => t.type === token && t.status === 'BAG');
+      if (bagTokens.length === 0) return;
+      
+      saveStateForUndo(tokens, history);
+      
+      // Randomly pick a token from bag to remove
+      const toRemove = bagTokens[Math.floor(Math.random() * bagTokens.length)];
+      setTokens(prev => prev.map(t => 
+        t.id === toRemove.id ? { ...t, status: 'POOL' } : t
+      ));
+      
+      const timestamp = new Date().toLocaleTimeString();
+      const valueSuffix = toRemove.value ? ` (기습치: ${toRemove.value})` : '';
+      const newCount = bagTokens.length - 1;
+      
+      setHistory(prev => [
+        ...prev,
+        {
+          time: timestamp,
+          text: isKorean 
+            ? `수동 조정: [${getTokenKoName(token)}${valueSuffix}] -1 제거 (최종 잔량: ${newCount}개)`
+            : `MANUAL OVERRIDE: -1 ${token.toUpperCase()}${valueSuffix} (Total: ${newCount})`,
+          type: 'edit'
+        }
+      ]);
+    }
     playClick();
   };
 
@@ -654,8 +752,37 @@ export default function App() {
       setUndoStack([]);
       setHistory([]);
       setDrawnToken(null);
+      setTokens(INITIAL_PHYSICAL_TOKENS);
       playPneumatic();
     }
+  };
+
+  // Render value breakdown inside the bag for Adult and Breeder
+  const renderBreakdown = (typeId) => {
+    if (typeId === 'blank') return null;
+    const bagTokens = tokens.filter(t => t.type === typeId && t.status === 'BAG');
+    if (bagTokens.length === 0) return null;
+    
+    if (typeId === 'adult' || typeId === 'breeder') {
+      const counts = {};
+      const values = typeId === 'adult' ? [2, 3, 4] : [3, 4];
+      values.forEach(v => { counts[v] = 0; });
+      
+      bagTokens.forEach(t => {
+        counts[t.value] = (counts[t.value] || 0) + 1;
+      });
+      
+      return (
+        <div className="token-breakdown-badges">
+          {values.map(v => (
+            <span key={v} className={`breakdown-badge ${counts[v] === 0 ? 'empty' : ''}`}>
+              {v}: {counts[v]}
+            </span>
+          ))}
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -809,61 +936,73 @@ export default function App() {
                     <div
                       className="token-circle"
                       style={{
-                        backgroundColor: INTRUDER_TYPES.find(t => t.id === drawnToken).color,
-                        boxShadow: `0 0 25px ${INTRUDER_TYPES.find(t => t.id === drawnToken).glow}`
+                        backgroundColor: INTRUDER_TYPES.find(t => t.id === drawnToken.type).color,
+                        boxShadow: `0 0 25px ${INTRUDER_TYPES.find(t => t.id === drawnToken.type).glow}`
                       }}
                     >
-                      <div className="token-circle-inner">
-                        <TokenIcon id={drawnToken} />
+                      <div className="token-circle-inner" style={{ color: INTRUDER_TYPES.find(t => t.id === drawnToken.type).color }}>
+                        <TokenIcon id={drawnToken.type} />
+                        {drawnToken.value !== null && (
+                          <div className="token-value-indicator">
+                            {drawnToken.value}
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <h3 className="drawn-token-title" style={{ color: INTRUDER_TYPES.find(t => t.id === drawnToken).color }}>
-                      {INTRUDER_TYPES.find(t => t.id === drawnToken).name[language].toUpperCase()}
+                    <h3 className="drawn-token-title" style={{ color: INTRUDER_TYPES.find(t => t.id === drawnToken.type).color }}>
+                      {INTRUDER_TYPES.find(t => t.id === drawnToken.type).name[language].toUpperCase()}
                     </h3>
                     <div className="drawn-token-threat">
-                      {t('threat')}: <span style={{ color: INTRUDER_TYPES.find(t => t.id === drawnToken).color }}>
-                        {INTRUDER_TYPES.find(t => t.id === drawnToken).threat[language] || INTRUDER_TYPES.find(t => t.id === drawnToken).threat}
+                      {t('threat')}: <span style={{ color: INTRUDER_TYPES.find(t => t.id === drawnToken.type).color }}>
+                        {INTRUDER_TYPES.find(t => t.id === drawnToken.type).threat[language]}
                       </span>
                     </div>
 
                     {/* Standard details */}
-                    <div className="drawn-rule-box" style={{ borderLeftColor: INTRUDER_TYPES.find(t => t.id === drawnToken).color }}>
+                    <div className="drawn-rule-box" style={{ borderLeftColor: INTRUDER_TYPES.find(t => t.id === drawnToken.type).color }}>
                       <h4>{t('telemetry')}</h4>
-                      <p>{INTRUDER_TYPES.find(t => t.id === drawnToken).description[language]}</p>
+                      <p>{INTRUDER_TYPES.find(t => t.id === drawnToken.type).description[language]}</p>
+                      {drawnToken.value !== null && (
+                        <p style={{ marginTop: '0.4rem', fontWeight: 'bold' }}>
+                          {language === 'ko' 
+                            ? `⚠️ 토큰 뒷면 기습치: ${drawnToken.value} (손패 카드 장수가 ${drawnToken.value}장보다 적을 시 기습공격 발동!)` 
+                            : `⚠️ Token Combat Value: ${drawnToken.value} (Surprise Attack triggers if player hand size < ${drawnToken.value}!)`}
+                        </p>
+                      )}
                     </div>
 
                     {/* Development Phase Special Rule Text overlay */}
                     {drawMode === 'DEVELOPMENT' && (
                       <div className="drawn-rule-box dev-rule">
                         <h4>{t('evoRules')}</h4>
-                        {drawnToken === 'blank' && <p>{language === 'ko' ? '공허 토큰: 주머니에 성체 토큰 1개를 추가하고 공허는 회수합니다.' : 'Add 1 Adult token to the bag. Return the Blank token to the bag.'}</p>}
-                        {drawnToken === 'larva' && <p>{language === 'ko' ? '애벌레 진화: 애벌레를 제거하고 성체 토큰 1개를 주머니에 추가합니다.' : 'Evolve Larva: Remove Larva from bag. Add 1 Adult token to the bag.'}</p>}
-                        {drawnToken === 'creeper' && <p>{language === 'ko' ? '아성체 진화: 아성체를 제거하고 완성체 토큰 1개를 주머니에 추가합니다.' : 'Evolve Creeper: Remove Creeper from bag. Add 1 Breeder token to the bag.'}</p>}
-                        {['adult', 'breeder'].includes(drawnToken) && <p>{language === 'ko' ? '성체/완성체: 토큰을 주머니로 회수합니다. 전투 중이 아닌 모든 플레이어들은 주사위를 굴려 소음 판정을 수행하십시오.' : 'Return the token to the bag. All players NOT in combat perform a Noise Roll.'}</p>}
-                        {drawnToken === 'queen' && <p>{language === 'ko' ? '여왕: 캐릭터가 둥지(Nest) 방에 있다면 여왕 조우를 시작합니다. 둥지에 아무도 없거나 이미 여왕이 밖으로 나와 있다면 알 1개를 추가하고 여왕은 주머니로 회수합니다.' : 'If there is any Character in the Nest room, spawn Queen encounter. Otherwise, add 1 Egg to board and return Queen to bag.'}</p>}
+                        {drawnToken.type === 'blank' && <p>{language === 'ko' ? '공허 토큰: 주머니에 성체 토큰 1개를 추가하고 공허는 회수합니다.' : 'Add 1 Adult token to the bag. Return the Blank token to the bag.'}</p>}
+                        {drawnToken.type === 'larva' && <p>{language === 'ko' ? '애벌레 진화: 애벌레를 제거하고 성체 토큰 1개를 주머니에 추가합니다.' : 'Evolve Larva: Remove Larva from bag. Add 1 Adult token to the bag.'}</p>}
+                        {drawnToken.type === 'creeper' && <p>{language === 'ko' ? '아성체 진화: 아성체를 제거하고 완성체 토큰 1개를 주머니에 추가합니다.' : 'Evolve Creeper: Remove Creeper from bag. Add 1 Breeder token to the bag.'}</p>}
+                        {['adult', 'breeder'].includes(drawnToken.type) && <p>{language === 'ko' ? '성체/완성체: 토큰을 주머니로 회수합니다. 전투 중이 아닌 모든 플레이어들은 주사위를 굴려 소음 판정을 수행하십시오.' : 'Return the token to the bag. All players NOT in combat perform a Noise Roll.'}</p>}
+                        {drawnToken.type === 'queen' && <p>{language === 'ko' ? '여왕: 캐릭터가 둥지(Nest) 방에 있다면 여왕 조우를 시작합니다. 둥지에 아무도 없거나 이미 여왕이 밖으로 나와 있다면 알 1개를 추가하고 여왕은 주머니로 회수합니다.' : 'If there is any Character in the Nest room, spawn Queen encounter. Otherwise, add 1 Egg to board and return Queen to bag.'}</p>}
                       </div>
                     )}
 
                     {/* Interactive Tactical buttons for drawn tokens */}
                     <div className="drawn-decision-actions">
                       {/* Special development buttons */}
-                      {drawMode === 'DEVELOPMENT' && drawnToken === 'blank' && (
+                      {drawMode === 'DEVELOPMENT' && drawnToken.type === 'blank' && (
                         <button className="btn-decision primary" onClick={handleBlankDevelopment}>
                           ⚙️ {t('applyEvo')} (공허 ➕ 성체)
                         </button>
                       )}
-                      {drawMode === 'DEVELOPMENT' && drawnToken === 'larva' && (
+                      {drawMode === 'DEVELOPMENT' && drawnToken.type === 'larva' && (
                         <button className="btn-decision primary" onClick={handleEvolveLarva}>
                           ⚙️ {t('applyEvo')} (애벌레 ➡️ 성체)
                         </button>
                       )}
-                      {drawMode === 'DEVELOPMENT' && drawnToken === 'creeper' && (
+                      {drawMode === 'DEVELOPMENT' && drawnToken.type === 'creeper' && (
                         <button className="btn-decision primary" onClick={handleEvolveCreeper}>
                           ⚙️ {t('applyEvo')} (아성체 ➡️ 완성체)
                         </button>
                       )}
-                      {drawMode === 'DEVELOPMENT' && drawnToken === 'queen' && (
+                      {drawMode === 'DEVELOPMENT' && drawnToken.type === 'queen' && (
                         <button className="btn-decision primary" onClick={handleQueenEggDevelopment}>
                           🥚 {language === 'ko' ? '둥지 안전: 알 추가 & 여왕 회수' : 'NEST SAFE: Add Egg & Return Queen'}
                         </button>
@@ -911,7 +1050,7 @@ export default function App() {
 
               <div className="inventory-list">
                 {INTRUDER_TYPES.map((type) => {
-                  const qty = bag[type.id];
+                  const qty = getBagCount(type.id);
                   const prob = getProbability(type.id);
 
                   return (
@@ -926,7 +1065,11 @@ export default function App() {
                       {/* Token details */}
                       <div className="token-info">
                         <span className="token-name-label">{type.name[language]}</span>
-                        <span className="token-threat-label">{t('threat')}: {type.threat[language] || type.threat}</span>
+                        <span className="token-threat-label">
+                          {t('threat')}: {type.threat[language]}
+                        </span>
+                        {/* Render value breakdown details for strategic depth */}
+                        {renderBreakdown(type.id)}
                       </div>
 
                       {/* Edit Quantity buttons */}
@@ -1039,19 +1182,19 @@ export default function App() {
               </section>
 
               <section>
-                <h4>{language === 'ko' ? '4. 컴포넌트 공급처 제한 (Component Limits)' : '4. Component Supply Limits'}</h4>
+                <h4>{language === 'ko' ? '4. 컴포넌트 공급처 제한 및 기습치 구성' : '4. Component Supply Limits & Attack Values'}</h4>
                 <p>
                   {language === 'ko' 
-                    ? '네메시스는 박스에 동봉된 물리 토큰 구성품 개수로 총량이 엄격히 제한됩니다. 규칙상 토큰을 주머니에 추가해야 하지만 공급처에 남은 토큰이 없다면 추가하지 않고 단계를 스킵합니다.' 
-                    : 'Nemesis tokens are strictly limited by physical component limits. If a rule instructs you to add a token but none are available in the supply, that step is skipped.'}
+                    ? '네메시스는 물리 토큰 구성품 개수로 주머니 및 공급처 총량이 제한됩니다. 각 토큰 뒷면에는 조우 시 사용되는 기습공격 수치(1~4)가 인쇄되어 있습니다.' 
+                    : 'Nemesis tokens are strictly limited by physical limits. Each token type has a printed combat surprise attack value (1 to 4) on its back.'}
                 </p>
                 <ul>
-                  <li>{language === 'ko' ? '공허 토큰: 최대 1개' : 'Blank token: Max 1'}</li>
-                  <li>{language === 'ko' ? '애벌레 토큰: 최대 8개' : 'Larva token: Max 8'}</li>
-                  <li>{language === 'ko' ? '아성체 토큰: 최대 3개' : 'Creeper token: Max 3'}</li>
-                  <li>{language === 'ko' ? '성체 토큰: 최대 12개' : 'Adult token: Max 12'}</li>
-                  <li>{language === 'ko' ? '완성체 토큰: 최대 2개' : 'Breeder token: Max 2'}</li>
-                  <li>{language === 'ko' ? '여왕 토큰: 최대 1개' : 'Queen token: Max 1'}</li>
+                  <li>{language === 'ko' ? '공허 토큰: 총 1개 (기습공격 판정 없음)' : 'Blank token: Max 1 (No attack value)'}</li>
+                  <li>{language === 'ko' ? '애벌레 토큰: 총 8개 (기습치: 전부 1)' : 'Larva token: Max 8 (Value: all 1)'}</li>
+                  <li>{language === 'ko' ? '아성체 토큰: 총 3개 (기습치: 전부 1)' : 'Creeper token: Max 3 (Value: all 1)'}</li>
+                  <li>{language === 'ko' ? '성체 토큰: 총 12개 (기습치 2: 4개 | 기습치 3: 5개 | 기습치 4: 3개)' : 'Adult token: Max 12 (Value 2: 4x | Value 3: 5x | Value 4: 3x)'}</li>
+                  <li>{language === 'ko' ? '완성체 토큰: 총 2개 (기습치 3: 1개 | 기습치 4: 1개)' : 'Breeder token: Max 2 (Value 3: 1x | Value 4: 1x)'}</li>
+                  <li>{language === 'ko' ? '여왕 토큰: 총 1개 (기습치: 4)' : 'Queen token: Max 1 (Value: 4)'}</li>
                 </ul>
               </section>
             </div>

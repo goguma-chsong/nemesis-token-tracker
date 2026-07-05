@@ -1003,6 +1003,50 @@
   color: var(--color-red);
 }
 
+/* Token Value Indicator (Surprise attack number) */
+.token-value-indicator {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: #0b0c10;
+  border: 2px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-hud);
+  font-size: 1.2rem;
+  font-weight: 900;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.9), 0 0 8px currentColor;
+  color: inherit;
+  z-index: 10;
+}
+
+/* Distribution Breakdown Badges */
+.token-breakdown-badges {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+}
+
+.breakdown-badge {
+  font-family: var(--font-hud);
+  font-size: 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  color: var(--text-secondary);
+  font-weight: bold;
+}
+
+.breakdown-badge.empty {
+  opacity: 0.2;
+  border-color: transparent;
+}
+
 /* Responsive Mobile-First Optimizations */
 @media (max-width: 768px) {
   #root {
