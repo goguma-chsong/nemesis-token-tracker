@@ -1,0 +1,149 @@
+/* Design System for NEMESIS INTRUDER BAG TRACKER */
+
+:root {
+  /* Colors */
+  --bg-primary: #06070d;
+  --bg-secondary: #0c0e17;
+  --bg-tertiary: #141724;
+  --border-color: #20263f;
+  --border-active: #00f3ff;
+  
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #475569;
+  
+  /* Neon Lights */
+  --color-cyan: #00f3ff;
+  --color-cyan-glow: rgba(0, 243, 255, 0.25);
+  
+  --color-amber: #ffb300;
+  --color-amber-glow: rgba(255, 179, 0, 0.25);
+  
+  --color-red: #ff3366;
+  --color-red-glow: rgba(255, 51, 102, 0.25);
+  
+  --color-green: #00ff66;
+  --color-green-glow: rgba(0, 255, 102, 0.25);
+  
+  --color-purple: #ae00ff;
+  --color-purple-glow: rgba(174, 0, 255, 0.25);
+  
+  --color-gray: #64748b;
+  --color-gray-glow: rgba(100, 116, 139, 0.2);
+
+  /* Fonts */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-hud: 'Orbitron', system-ui, sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+
+  /* Layout */
+  --border-radius: 8px;
+  --transition-speed: 0.2s;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* CRT Screen Scanlines Effect */
+body::before {
+  content: " ";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 9999;
+  background-size: 100% 4px, 6px 100%;
+  pointer-events: none;
+}
+
+/* Ambient glow in background */
+body::after {
+  content: " ";
+  display: block;
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(16, 24, 48, 0.4) 0%, rgba(6, 7, 13, 0) 70%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* App Container */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* Common HUD Elements */
+h1, h2, h3, h4, button, .hud-text {
+  font-family: var(--font-hud);
+  letter-spacing: 0.05em;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-cyan);
+}
+
+/* Animation utilities */
+@keyframes pulse-cyan {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.2), inset 0 0 10px rgba(0, 243, 255, 0.1);
+    border-color: var(--border-color);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.5), inset 0 0 15px rgba(0, 243, 255, 0.25);
+    border-color: var(--color-cyan);
+  }
+}
+
+@keyframes scanline-anim {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+@keyframes glitch-flicker {
+  0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
+    opacity: 0.99;
+  }
+  20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
+    opacity: 0.4;
+  }
+}
+
+.glitch-flicker {
+  animation: glitch-flicker 4s infinite;
+}
