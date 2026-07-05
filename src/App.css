@@ -1002,3 +1002,170 @@
 .highlight-red {
   color: var(--color-red);
 }
+
+/* Responsive Mobile-First Optimizations */
+@media (max-width: 768px) {
+  #root {
+    padding: 0.75rem;
+  }
+
+  .ship-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .hud-system-stats {
+    justify-content: space-between;
+    gap: 0.4rem;
+  }
+
+  .stat-box {
+    flex: 1;
+    text-align: center;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.65rem;
+  }
+
+  .stat-box .label {
+    display: block;
+    margin-right: 0;
+    margin-bottom: 0.1rem;
+  }
+
+  .hud-controls-toolbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.3rem;
+  }
+
+  .btn-hud-tool {
+    flex: 1 1 calc(33.333% - 0.3rem);
+    justify-content: center;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.7rem;
+    min-width: 75px;
+  }
+
+  .setup-panel {
+    padding: 1.5rem 1rem;
+    margin: 1rem 0;
+  }
+
+  .setup-panel h2 {
+    font-size: 1.2rem;
+  }
+
+  .btn-player-select {
+    padding: 0.6rem;
+    font-size: 0.95rem;
+  }
+
+  .starting-bag-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+  }
+
+  .dashboard-grid {
+    gap: 1rem;
+  }
+
+  .hud-panel {
+    padding: 1rem;
+  }
+
+  .chamber-container {
+    min-height: 320px;
+  }
+
+  .containment-chamber {
+    width: 160px;
+    height: 160px;
+    margin-bottom: 1.5rem;
+  }
+
+  .token-circle {
+    width: 90px;
+    height: 90px;
+    margin-bottom: 0.8rem;
+  }
+
+  .drawn-token-title {
+    font-size: 1.2rem;
+  }
+
+  .drawn-rule-box {
+    padding: 0.6rem;
+    font-size: 0.8rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .btn-main-action {
+    padding: 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  /* Optimized Mobile Density List Row */
+  .inventory-row {
+    grid-template-columns: 36px 1fr auto auto;
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .inventory-mini-token {
+    width: 28px;
+    height: 28px;
+  }
+
+  .token-name-label {
+    font-size: 0.8rem;
+  }
+
+  .token-threat-label {
+    font-size: 0.6rem;
+  }
+
+  .token-edit-controls {
+    width: 80px;
+    padding: 0.1rem;
+  }
+
+  .btn-edit-qty {
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+  }
+
+  .qty-val {
+    font-size: 0.85rem;
+    width: 24px;
+  }
+
+  /* Hide progress bar fill on small screens to save space */
+  .probability-bar-bg {
+    display: none;
+  }
+
+  .probability-wrapper {
+    padding-left: 0.2rem;
+    gap: 0;
+  }
+
+  .probability-pct {
+    font-size: 0.8rem;
+    width: 38px;
+  }
+
+  .bag-summary-footer {
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: center;
+    font-size: 0.75rem;
+  }
+
+  .terminal-logs {
+    height: 100px;
+    font-size: 0.75rem;
+  }
+}
